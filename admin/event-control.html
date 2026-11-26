@@ -1,0 +1,352 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Event Control | EventHub</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#f5f6fc;color:#17214a;
+ font-family:Arial,sans-serif
+}
+header{
+ background:#171c4b;color:white;
+ padding:23px 7%;display:flex;
+ justify-content:space-between;align-items:center
+}
+header a{color:white;text-decoration:none}
+main{max-width:1150px;margin:40px auto;padding:0 20px}
+h1{font-size:34px;margin:0 0 12px}
+.muted{color:#6e7894}
+.toolbar{display:flex;gap:12px;margin:25px 0}
+input,textarea{
+ width:100%;padding:13px;margin-top:7px;
+ border:1px solid #dce0ee;border-radius:9px;
+ font:inherit
+}
+textarea{min-height:110px}
+.card,.panel{
+ background:white;border-radius:16px;padding:25px;
+ margin-bottom:17px;box-shadow:0 6px 25px #1421550d
+}
+.card h2{margin:0 0 12px;font-size:21px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+button,.btn{
+ background:#4f35e8;color:white;border:0;
+ border-radius:9px;padding:12px 18px;
+ cursor:pointer;font-weight:bold;text-decoration:none
+}
+.secondary{background:#8f83df}
+.danger{background:#db4161}
+button:hover{opacity:.88}
+label{display:block;margin:13px 0;font-weight:bold}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+[hidden]{display:none!important}
+#message{font-weight:bold;margin:15px 0}
+.good{color:#167947}
+.bad{color:#d0304d}
+.person{
+ padding:13px 0;border-bottom:1px solid #e9ecf4;
+ overflow-wrap:anywhere
+}
+@media(max-width:650px){
+ .grid{grid-template-columns:1fr}
+ .toolbar{flex-direction:column}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+ <strong>EventHub | Admin Console</strong>
+ <a href="/admin/dashboard.html">Dashboard</a>
+</header>
+
+<main>
+
+<h1>Event Control Center</h1>
+<p class="muted">
+ Manage all events, participants and cancellations.
+</p>
+
+<div class="toolbar">
+ <input id="search" placeholder="Search events...">
+ <button id="refresh">Refresh</button>
+</div>
+
+<p id="message" role="status"></p>
+
+<section id="events">Loading events...</section>
+
+<section class="panel" id="editPanel" hidden>
+ <h2>Edit Event</h2>
+
+ <form id="editForm">
+  <label>Event Name
+   <input id="title" required maxlength="150">
+  </label>
+
+  <div class="grid">
+   <label>Category
+    <input id="category" required maxlength="80">
+   </label>
+   <label>Location
+    <input id="location" required maxlength="200">
+   </label>
+   <label>Date
+    <input id="eventDate" type="date" required>
+   </label>
+   <label>Time
+    <input id="eventTime" type="time" required>
+   </label>
+  </div>
+
+  <label>Description
+   <textarea id="description" required maxlength="5000"></textarea>
+  </label>
+
+  <div class="actions">
+   <button type="submit">Save Changes</button>
+   <button class="secondary" type="button" id="closeEdit">
+    Close
+   </button>
+  </div>
+ </form>
+</section>
+
+<section class="panel" id="participantPanel" hidden>
+ <h2>Participants</h2>
+ <div id="people"></div>
+</section>
+
+</main>
+
+<script>
+let allEvents = [];
+
+const $ = id => document.getElementById(id);
+
+function notify(message,error=false){
+ $("message").textContent=message;
+ $("message").className=error?"bad":"good";
+}
+
+async function api(url,options={}){
+ const response=await fetch(url,{
+  credentials:"same-origin",...options
+ });
+ const data=await response.json();
+
+ if(!response.ok||!data.success){
+  throw new Error(data.message||"Request failed.");
+ }
+ return data;
+}
+
+function button(label,action,style=""){
+ const el=document.createElement("button");
+ el.type="button";
+ el.textContent=label;
+ el.className=style;
+ el.onclick=action;
+ return el;
+}
+
+async function loadEvents(){
+ try{
+  const data=await api("/api/admin/control/events");
+  allEvents=data.events;
+  renderEvents();
+  notify(`${allEvents.length} event(s) loaded.`);
+ }catch(error){
+  notify(error.message,true);
+ }
+}
+
+function renderEvents(){
+ const container=$("events");
+ container.replaceChildren();
+
+ const query=$("search").value.toLowerCase();
+
+ const filtered=allEvents.filter(e=>
+  e.title.toLowerCase().includes(query) ||
+  String(e.event_id).includes(query)
+ );
+
+ if(filtered.length===0){
+  container.textContent="No matching events.";
+  return;
+ }
+
+ filtered.forEach(event=>{
+  const card=document.createElement("article");
+  card.className="card";
+
+  const title=document.createElement("h2");
+  title.textContent=event.title;
+
+  const details=document.createElement("p");
+  details.className="muted";
+  details.textContent=
+   `Event #${event.event_id} | ${event.category} | `+
+   `${event.event_date} ${event.event_time} | `+
+   `${event.location}`;
+
+  const status=document.createElement("p");
+  status.textContent=
+   `Status: ${event.status} | `+
+   `Confirmed Bookings: ${event.booking_count}`;
+
+  const actions=document.createElement("div");
+  actions.className="actions";
+
+  if(event.status==="published"){
+   actions.appendChild(
+    button("Edit Event",()=>openEdit(event))
+   );
+  }
+
+  actions.appendChild(
+   button(
+    "View Participants",
+    ()=>viewPeople(event.event_id),
+    "secondary"
+   )
+  );
+
+  if(event.status==="published"){
+   actions.appendChild(
+    button(
+     "Cancel Event",
+     ()=>cancelEvent(event.event_id),
+     "danger"
+    )
+   );
+  }
+
+  card.append(title,details,status,actions);
+  container.appendChild(card);
+ });
+}
+
+function openEdit(event){
+ $("editForm").dataset.eventId=event.event_id;
+
+ const mapping={
+  title:"title",
+  category:"category",
+  location:"location",
+  eventDate:"event_date",
+  eventTime:"event_time",
+  description:"description"
+ };
+
+ Object.entries(mapping).forEach(([id,key])=>{
+  $(id).value=event[key]||"";
+ });
+
+ $("editPanel").hidden=false;
+ $("editPanel").scrollIntoView({behavior:"smooth"});
+}
+
+$("editForm").onsubmit=async function(e){
+ e.preventDefault();
+
+ const id=this.dataset.eventId;
+
+ const payload={
+  title:$("title").value.trim(),
+  category:$("category").value.trim(),
+  location:$("location").value.trim(),
+  event_date:$("eventDate").value,
+  event_time:$("eventTime").value,
+  description:$("description").value.trim()
+ };
+
+ try{
+  const result=await api(
+   `/api/admin/control/events/${id}`,
+   {
+    method:"PUT",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(payload)
+   }
+  );
+
+  $("editPanel").hidden=true;
+  await loadEvents();
+  notify(result.message);
+  window.scrollTo({top:0,behavior:"smooth"});
+ }catch(error){
+  notify(error.message,true);
+ }
+};
+
+async function viewPeople(id){
+ try{
+  const data=await api(
+   `/api/admin/control/events/${id}/participants`
+  );
+
+  const box=$("people");
+  box.replaceChildren();
+
+  if(data.participants.length===0){
+   box.textContent="No bookings found.";
+  }
+
+  data.participants.forEach(p=>{
+   const row=document.createElement("div");
+   row.className="person";
+
+   row.textContent=
+    `Booking #${p.booking_id} | `+
+    `${p.email} | ${p.status}`;
+
+   box.appendChild(row);
+  });
+
+  $("participantPanel").hidden=false;
+  $("participantPanel").scrollIntoView({
+   behavior:"smooth"
+  });
+ }catch(error){
+  notify(error.message,true);
+ }
+}
+
+async function cancelEvent(id){
+ if(!confirm(
+  "Cancel this event and all confirmed bookings?"
+ ))return;
+
+ try{
+  const result=await api(
+   `/api/admin/control/events/${id}`,
+   {method:"DELETE"}
+  );
+
+  await loadEvents();
+  notify(result.message);
+ }catch(error){
+  notify(error.message,true);
+ }
+}
+
+$("closeEdit").onclick=()=>{
+ $("editPanel").hidden=true;
+};
+
+$("refresh").onclick=loadEvents;
+$("search").oninput=renderEvents;
+
+loadEvents();
+</script>
+
+</body>
+</html>

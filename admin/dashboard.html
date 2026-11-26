@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventHub - Admin Dashboard</title>
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<div class="dashboard-layout">
+    <aside class="sidebar">
+        <h2 class="logo">EventHub</h2>
+        <p class="role-label">ADMIN PANEL</p>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="active">◫ Dashboard</a>
+            <a href="add-event.html">＋ Add Event</a>
+            <a href="event-control.html">▤ Manage Events</a>
+            <a href="manage-users.html">♙ Manage Users</a>
+            
+            <a href="../home.html">⌂ View Website</a>
+        </nav>
+        <div class="sidebar-bottom">
+            <a href="../login.html">↪ Logout</a>
+        </div>
+    </aside>
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <h1>Dashboard</h1>
+                <p>Welcome to your EventHub Admin Panel</p>
+            </div>
+            <div class="admin-profile">
+                <span class="avatar">A</span>
+                <span>Administrator</span>
+            </div>
+        </header>
+        <section class="stats-grid">
+            <article class="stat-card">
+                <div class="stat-icon purple">📅</div>
+                <p>Total Events</p>
+                <h2 id="totalEvents">—</h2>
+            </article>
+            <article class="stat-card">
+                <div class="stat-icon blue">👥</div>
+                <p>Total Users</p>
+                <h2 id="totalUsers">—</h2>
+            </article>
+            <article class="stat-card">
+                <div class="stat-icon green">🎟️</div>
+                <p>Total Bookings</p>
+                <h2 id="totalBookings">—</h2>
+            </article>
+            <article class="stat-card">
+                <div class="stat-icon orange">📈</div>
+                <p>Upcoming Events</p>
+                <h2 id="upcomingEvents">—</h2>
+            </article>
+        </section>
+        <section class="content-card">
+            <div class="card-heading">
+                <div>
+                    <h2>Recent Events</h2>
+                    <p>Manage your latest published events.</p>
+                </div>
+                <a href="add-event.html" class="primary-btn">+ Add New Event</a>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Event Name</th>
+                            <th>Date</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentEventsTable">
+                        <tr><td colspan="5" class="empty-table">Loading events...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <section class="content-card">
+            <div class="card-heading">
+                <div>
+                    <h2>Quick Actions</h2>
+                    <p>Manage your event platform.</p>
+                </div>
+            </div>
+            <div class="quick-actions">
+                <a href="add-event.html" class="action-card">
+                    <span>➕</span>
+                    <h3>Add New Event</h3>
+                    <p>Create and publish an event</p>
+                </a>
+                <a href="event-control.html" class="action-card">
+                    <span>📋</span>
+                    <h3>Manage Events</h3>
+                    <p>Edit and organize events</p>
+                </a>
+                <a href="manage-users.html" class="action-card">
+                    <span>👥</span>
+                    <h3>Manage Users</h3>
+                    <p>View registered users</p>
+                </a>
+            </div>
+        </section>
+        <footer class="dashboard-footer">© 2026 EventHub Admin Dashboard</footer>
+    </main>
+</div>
+<a href="/admin/event-control.html"
+   style="position:fixed;right:20px;bottom:20px;background:#4f35e8;color:white;
+          padding:14px 22px;border-radius:12px;text-decoration:none;font-weight:bold;
+          box-shadow:0 8px 25px #0002;z-index:1000;">
+   Manage All Events
+</a>
+<script>
+    async function loadAdminDashboard() {
+        const tbody = document.getElementById('recentEventsTable');
+        try {
+            const response = await fetch('/api/admin/dashboard/stats', {
+                credentials: 'same-origin',
+                cache: 'no-store'
+            });
+            const data = await response.json();
+            if (!response.ok || data.success !== true) {
+                throw new Error(data.message || 'Could not load statistics');
+            }
+
+            document.getElementById('totalEvents').textContent = data.total_events;
+            document.getElementById('totalUsers').textContent = data.total_users;
+            document.getElementById('totalBookings').textContent = data.total_bookings;
+            document.getElementById('upcomingEvents').textContent = data.upcoming_events;
+            tbody.replaceChildren();
+            const events = Array.isArray(data.recent_events) ? data.recent_events : [];
+            if (events.length === 0) {
+                const row = tbody.insertRow();
+                const cell = row.insertCell();
+                cell.colSpan = 5;
+                cell.className = 'empty-table';
+                cell.textContent = 'No published events available yet.';
+                return;
+            }
+            for (const event of events) {
+                const row = tbody.insertRow();
+                for (const value of [event.title, event.event_date, event.location, event.status]) {
+                    const cell = row.insertCell();
+                    cell.textContent = String(value ?? '');
+                }
+                const action = row.insertCell();
+                const link = document.createElement('a');
+                link.href = '/admin/event-control.html';
+                link.textContent = 'Manage';
+                action.appendChild(link);
+            }
+        } catch (error) {
+            console.error('Admin dashboard error:', error);
+            tbody.replaceChildren();
+            const row = tbody.insertRow();
+            const cell = row.insertCell();
+            cell.colSpan = 5;
+            cell.className = 'empty-table';
+            cell.textContent = 'Dashboard data could not be loaded. Check the Flask server.';
+        }
+    }
+    document.addEventListener('DOMContentLoaded', loadAdminDashboard);
+</script>
+</body>
+</html>

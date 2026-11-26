@@ -1,0 +1,324 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bookings | EventHub</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f6ff;
+            color: #142044;
+        }
+
+        header {
+            background: #171b4b;
+            color: white;
+            padding: 22px 7%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h2 { margin: 0; }
+
+        header a {
+            color: white;
+            text-decoration: none;
+        }
+
+        main {
+            max-width: 950px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        h1 { margin-bottom: 8px; }
+
+        .subtitle { color: #64748b; }
+
+        .booking-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 25px;
+            margin-top: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.04);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .card-header h2 { margin: 0; }
+
+        .badge {
+            padding: 8px 13px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge.cancelled {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .details {
+            color: #64748b;
+            line-height: 1.9;
+            margin: 18px 0;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #4935df;
+            color: white;
+            padding: 12px 18px;
+            border: 0;
+            border-radius: 9px;
+            text-decoration: none;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 8px;
+            margin-top: 6px;
+        }
+
+        .btn.secondary {
+            background: #ece9ff;
+            color: #4935df;
+        }
+
+        .ticket {
+            margin-top: 20px;
+            padding: 20px;
+            border: 2px dashed #4935df;
+            border-radius: 12px;
+            background: #faf9ff;
+        }
+
+        .ticket h3 { margin-top: 0; }
+
+        .ticket p { line-height: 1.7; }
+
+        #status {
+            padding: 30px;
+            text-align: center;
+            color: #64748b;
+        }
+
+        [hidden] { display: none !important; }
+
+        @media (max-width: 600px) {
+            .booking-card { padding: 18px; }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h2>EventHub</h2>
+    <a href="/home.html">Home</a>
+</header>
+
+<main>
+    <h1>My Bookings</h1>
+    <p class="subtitle">View your booked events and confirmations.</p>
+
+    <div id="status">Loading your bookings...</div>
+    <div id="bookingsContainer"></div>
+</main>
+
+<script>
+async function loadBookings() {
+    const container = document.getElementById("bookingsContainer");
+    const status = document.getElementById("status");
+
+    try {
+        const response = await fetch("/api/my-bookings");
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || "Could not load bookings.");
+        }
+
+        container.replaceChildren();
+
+        if (result.bookings.length === 0) {
+            status.textContent = "You have no bookings yet.";
+            return;
+        }
+
+        status.hidden = true;
+
+        result.bookings.forEach(booking => {
+            const card = document.createElement("article");
+            card.className = "booking-card";
+
+            const header = document.createElement("div");
+            header.className = "card-header";
+
+            const title = document.createElement("h2");
+            title.textContent = booking.title;
+
+            const badge = document.createElement("span");
+            badge.className = "badge";
+
+            if (booking.status === "cancelled") {
+                badge.classList.add("cancelled");
+            }
+
+            badge.textContent = booking.status;
+
+            header.append(title, badge);
+
+            const details = document.createElement("div");
+            details.className = "details";
+
+            const lines = [
+                `Booking ID: #${booking.booking_id}`,
+                `Date: ${booking.event_date}`,
+                `Time: ${booking.event_time}`,
+                `Location: ${booking.location}`
+            ];
+
+            lines.forEach(line => {
+                const p = document.createElement("p");
+                p.textContent = line;
+                details.appendChild(p);
+            });
+
+            const viewEvent = document.createElement("a");
+            viewEvent.className = "btn secondary";
+            viewEvent.href =
+                `/event-details.html?id=${booking.event_id}`;
+            viewEvent.textContent = "View Event";
+
+            card.append(header, details, viewEvent);
+
+            if (booking.status === "confirmed") {
+                const button = document.createElement("button");
+                button.className = "btn";
+                button.textContent = "View Confirmation";
+
+                const ticket = document.createElement("div");
+                ticket.className = "ticket";
+                ticket.hidden = true;
+
+                const ticketTitle = document.createElement("h3");
+                ticketTitle.textContent = "Booking Confirmation";
+
+                ticket.appendChild(ticketTitle);
+
+                [
+                    `Booking ID: #${booking.booking_id}`,
+                    `Event: ${booking.title}`,
+                    `Date: ${booking.event_date}`,
+                    `Time: ${booking.event_time}`,
+                    `Location: ${booking.location}`,
+                    "Status: Confirmed"
+                ].forEach(line => {
+                    const p = document.createElement("p");
+                    p.textContent = line;
+                    ticket.appendChild(p);
+                });
+
+                button.addEventListener("click", () => {
+                    ticket.hidden = !ticket.hidden;
+                    button.textContent = ticket.hidden
+                        ? "View Confirmation"
+                        : "Hide Confirmation";
+                });
+
+                card.append(button, ticket);
+
+const ticketLink = document.createElement("a");
+
+ticketLink.href = `/ticket.html?id=${booking.booking_id}`;
+ticketLink.className = "btn";
+ticketLink.textContent = "🎟️ View Ticket";
+
+card.appendChild(ticketLink);
+
+            }
+
+if (booking.status === "confirmed") {
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className = "btn";
+    cancelBtn.textContent = "Cancel Booking";
+    cancelBtn.style.background = "#dc2626";
+
+    cancelBtn.addEventListener("click", async () => {
+        if (!confirm("Are you sure you want to cancel this booking?")) {
+            return;
+        }
+
+        cancelBtn.disabled = true;
+
+        try {
+            const response = await fetch(
+                `/api/bookings/${booking.booking_id}/cancel`,
+                { method: "POST" }
+            );
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                alert("Booking cancelled successfully!");
+                loadBookings();
+            } else {
+                alert(result.message || "Cancellation failed.");
+                cancelBtn.disabled = false;
+            }
+        } catch (error) {
+            alert("Server connection error.");
+            cancelBtn.disabled = false;
+        }
+    });
+
+    card.appendChild(cancelBtn);
+}
+
+            container.appendChild(card);
+        });
+
+    } catch (error) {
+        status.hidden = false;
+        status.textContent = error.message;
+    }
+}
+
+loadBookings();
+</script>
+
+<a href="/notifications.html"
+   style="
+       position:fixed;
+       bottom:20px;
+       right:20px;
+       background:#4f35e8;
+       color:white;
+       padding:14px 22px;
+       border-radius:30px;
+       text-decoration:none;
+       font-weight:bold;
+       box-shadow:0 5px 20px #0002;
+       z-index:1000;
+   ">
+    🔔 Notifications
+</a>
+
+</body>
+</html>

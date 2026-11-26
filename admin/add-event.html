@@ -1,0 +1,337 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>EventHub - Add Event</title>
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<div class="dashboard-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <h2 class="logo">EventHub</h2>
+        <p class="role-label">ADMIN PANEL</p>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html">◫ Dashboard</a>
+            <a href="add-event.html" class="active">＋ Add Event</a>
+            <a href="manage-events.html">▤ Manage Events</a>
+            <a href="manage-users.html">♙ Manage Users</a>
+            <a href="../home.html">⌂ View Website</a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <a href="../login.html">↪ Logout</a>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+        <header class="topbar">
+            <div>
+                <h1>Add New Event</h1>
+                <p>Create and publish a new event on EventHub.</p>
+            </div>
+
+            <div class="admin-profile">
+                <span class="avatar">A</span>
+                <span>Administrator</span>
+            </div>
+        </header>
+
+        <!-- ADD EVENT FORM -->
+        <section class="content-card">
+
+            <div class="card-heading">
+                <div>
+                    <h2>Event Information</h2>
+                    <p>Fill in the details below.</p>
+                </div>
+            </div>
+
+            <form id="addEventForm" class="event-form">
+
+                <div class="form-group">
+                    <label for="eventName">Event Name *</label>
+                    <input type="text" id="eventName"
+                           name="eventName"
+                           placeholder="Enter event name"
+                           maxlength="150" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="eventCategory">Category *</label>
+                    
+<select id="eventCategory" name="category" required
+    onchange="
+        const box = document.getElementById('otherCategory');
+        box.style.display = this.value === 'Other' ? 'block' : 'none';
+        box.required = this.value === 'Other';
+    ">
+
+                        <option value="">Select Category</option>
+                        <option value="Music">Music</option>
+                        <option value="Technology">Technology</option>
+                        <option value="Education">Education</option>
+                        <option value="Sports">Sports</option>
+                        <option value="Workshop">Workshop</option>
+                        <option value="Other">Other</option>
+                    </select>
+
+
+<input
+    type="text"
+    id="otherCategory"
+    placeholder="Enter your event category"
+    maxlength="50"
+    style="display:none; width:100%; margin-top:12px; padding:15px; border:1px solid #d5dded; border-radius:9px;"
+>
+
+
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="eventDate">Event Date *</label>
+                        <input type="date" id="eventDate"
+                               name="date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="eventTime">Event Time *</label>
+                        <input type="time" id="eventTime"
+                               name="time" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="eventLocation">Event Location *</label>
+                    <input type="text" id="eventLocation"
+                           name="location"
+                           placeholder="Enter event location"
+                           required>
+                </div>
+
+                <div class="form-group">
+                    <label for="eventDescription">Description *</label>
+                    <textarea id="eventDescription"
+                              name="description"
+                              rows="5"
+                              placeholder="Describe your event..."
+                              required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="maxParticipants">
+                        Maximum Participants *
+                    </label>
+                    <input type="number" id="maxParticipants"
+                           name="maxParticipants"
+                           min="1" max="100000"
+                           placeholder="Enter participant limit"
+                           required>
+                </div>
+
+                <div class="form-group">
+                    <label for="eventImage">Event Image</label>
+                    <input type="file" id="eventImage"
+                           name="eventImage"
+                           accept="image/png,image/jpeg,image/webp">
+                    <small>Supported: JPG, PNG, WEBP (Max 5 MB)</small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="reset" class="cancel-btn">
+                        Clear Form
+                    </button>
+
+                    <button type="submit" class="primary-btn form-submit">
+                        
+<!-- EVENT TICKET TYPE -->
+<div style="margin:24px 0;padding:22px;
+background:#f8f7ff;border:1px solid #e4e0ff;
+border-radius:14px;">
+
+    <h3 style="margin-top:0;">
+        🎟️ Ticket Information
+    </h3>
+
+    <label for="ticketType">
+        Event Type *
+    </label>
+
+    <select id="ticketType" name="ticketType"
+        required
+        style="width:100%;padding:13px;
+        margin-top:9px;border:1px solid #d9d6ec;
+        border-radius:9px;">
+
+        <option value="free">
+            Free Event
+        </option>
+
+        <option value="paid">
+            Paid Event
+        </option>
+
+    </select>
+
+    <div id="ticketPriceGroup"
+         style="display:none;margin-top:18px;">
+
+        <label for="ticketPrice">
+            Ticket Price (LKR) *
+        </label>
+
+        <input
+            type="number"
+            id="ticketPrice"
+            name="ticketPrice"
+            placeholder="Example: 1500.00"
+            min="0.01"
+            max="999999.99"
+            step="0.01"
+            style="width:100%;padding:13px;
+            margin-top:9px;border:1px solid #d9d6ec;
+            border-radius:9px;"
+        >
+
+        <small>
+            Enter ticket price in Sri Lankan Rupees.
+        </small>
+
+    </div>
+
+</div>
+
+                        Publish Event
+                    </button>
+                </div>
+
+                <p id="formMessage" role="status" aria-live="polite"></p>
+
+            </form>
+        </section>
+
+    </main>
+</div>
+
+<script src="add-event.js"></script>
+
+<!-- EventHub: Admin Add Event Layout Fix -->
+<style>
+.eventhub-ticket-fixed {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 20px 0 !important;
+    padding: 20px !important;
+    box-sizing: border-box !important;
+    background: #f7f7ff !important;
+    border: 1px solid #dce0f0 !important;
+    border-radius: 12px !important;
+    color: #162347 !important;
+    transform: none !important;
+}
+
+.eventhub-ticket-fixed label,
+.eventhub-ticket-fixed select,
+.eventhub-ticket-fixed .form-group {
+    position: static !important;
+    transform: none !important;
+    color: #162347 !important;
+}
+
+.eventhub-ticket-fixed select {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 46px !important;
+    margin-top: 8px !important;
+}
+
+.eventhub-actions-fixed {
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+}
+
+.eventhub-actions-fixed button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 48px !important;
+    padding: 14px 24px !important;
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const publishButton = [...document.querySelectorAll("button")]
+        .find(button =>
+            /publish event/i.test(button.textContent)
+        );
+
+    const form = publishButton?.closest("form");
+    if (!form) return;
+
+    const typeSelect = [...form.querySelectorAll("select")]
+        .find(select =>
+            [...select.options].some(option =>
+                /free event/i.test(option.textContent)
+            )
+        );
+
+    if (!typeSelect) return;
+
+    let ticketPanel = null;
+
+    for (
+        let node = typeSelect.parentElement;
+        node && node !== form && node !== publishButton;
+        node = node.parentElement
+    ) {
+        if (
+            /ticket information/i.test(node.textContent) &&
+            !node.querySelector('button[type="submit"]')
+        ) {
+            ticketPanel = node;
+            break;
+        }
+    }
+
+    if (!ticketPanel && publishButton.contains(typeSelect)) {
+        ticketPanel = [...publishButton.children]
+            .find(child => child.contains(typeSelect));
+    }
+
+    if (!ticketPanel || ticketPanel.contains(publishButton)) return;
+
+    const actionRow = publishButton.closest(
+        ".form-actions, .form-buttons, .button-group"
+    ) || publishButton.parentElement;
+
+    if (!actionRow || actionRow === form) return;
+
+    actionRow.before(ticketPanel);
+
+    ticketPanel.classList.add("eventhub-ticket-fixed");
+    actionRow.classList.add("eventhub-actions-fixed");
+});
+</script>
+
+</body>
+</html>

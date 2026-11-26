@@ -1,0 +1,240 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>Notifications | EventHub</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f5f6ff;
+    color: #18214a;
+}
+
+header {
+    background: #151a49;
+    padding: 23px 7%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+header a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+main {
+    max-width: 900px;
+    margin: 45px auto;
+    padding: 0 20px;
+}
+
+h1 {
+    font-size: 34px;
+}
+
+.subtitle {
+    color: #6c7695;
+    margin-bottom: 30px;
+}
+
+.notification {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 15px;
+    border-left: 5px solid #ddd;
+    box-shadow: 0 5px 22px #1924550a;
+}
+
+.notification.unread {
+    border-left-color: #4f35e8;
+    background: #fff;
+}
+
+.notification h3 {
+    margin-top: 0;
+    font-size: 19px;
+}
+
+.notification p {
+    line-height: 1.7;
+    color: #596681;
+}
+
+.date {
+    font-size: 13px;
+    color: #8993a9;
+}
+
+button {
+    background: #4f35e8;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 11px 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:hover {
+    opacity: .9;
+}
+
+#status {
+    margin-bottom: 20px;
+    color: #555;
+}
+
+.empty {
+    background: white;
+    padding: 35px;
+    border-radius: 15px;
+    text-align: center;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <a href="/home.html">EventHub</a>
+    <a href="/my-bookings.html">My Bookings</a>
+</header>
+
+<main>
+
+<h1>🔔 My Notifications</h1>
+
+<p class="subtitle">
+    Event updates, schedule changes and cancellations.
+</p>
+
+<p id="status" role="status">Loading notifications...</p>
+
+<div id="notificationList"></div>
+
+</main>
+
+<script>
+
+const notificationList =
+    document.getElementById("notificationList");
+
+const statusText =
+    document.getElementById("status");
+
+async function loadNotifications() {
+
+    try {
+        const response = await fetch(
+            "/api/notifications"
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(
+                data.message || "Could not load notifications."
+            );
+        }
+
+        notificationList.replaceChildren();
+
+        statusText.textContent =
+            `${data.unread_count} unread notification(s)`;
+
+        if (data.notifications.length === 0) {
+            const empty = document.createElement("div");
+
+            empty.className = "empty";
+            empty.textContent = "No notifications yet.";
+
+            notificationList.appendChild(empty);
+            return;
+        }
+
+        data.notifications.forEach(note => {
+
+            const card = document.createElement("div");
+
+            card.className =
+                "notification" +
+                (note.is_read ? "" : " unread");
+
+            const title = document.createElement("h3");
+            title.textContent = note.title;
+
+            const message = document.createElement("p");
+            message.textContent = note.message;
+
+            const date = document.createElement("div");
+            date.className = "date";
+            date.textContent = note.created_at;
+
+            card.append(title, message, date);
+
+            if (!note.is_read) {
+
+                const button =
+                    document.createElement("button");
+
+                button.textContent = "Mark as Read";
+
+                button.style.marginTop = "15px";
+
+                button.onclick = async () => {
+
+                    button.disabled = true;
+
+                    try {
+                        const response = await fetch(
+                            `/api/notifications/${note.notification_id}/read`,
+                            {
+                                method: "POST"
+                            }
+                        );
+
+                        if (!response.ok) {
+                            throw new Error(
+                                "Could not mark notification as read."
+                            );
+                        }
+
+                        await loadNotifications();
+
+                    } catch (error) {
+                        button.disabled = false;
+                        statusText.textContent = error.message;
+                    }
+                };
+
+                card.appendChild(button);
+            }
+
+            notificationList.appendChild(card);
+        });
+
+    } catch (error) {
+        statusText.textContent = error.message;
+    }
+}
+
+loadNotifications();
+
+</script>
+
+</body>
+</html>

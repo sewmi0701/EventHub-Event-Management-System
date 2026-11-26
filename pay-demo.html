@@ -1,0 +1,348 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Demo Payment | EventHub</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #f5f6ff;
+            font-family: Arial, sans-serif;
+            color: #172149;
+        }
+
+        header {
+            background: #171c4b;
+            color: white;
+            padding: 24px 7%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header a {
+            color: white;
+            text-decoration: none;
+        }
+
+        main {
+            max-width: 550px;
+            margin: 60px auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: 0 10px 35px #00000012;
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 30px;
+        }
+
+        .subtitle {
+            color: #71809b;
+            line-height: 1.6;
+        }
+
+        .warning {
+            background: #fff5dc;
+            border: 1px solid #efdda8;
+            padding: 16px;
+            border-radius: 10px;
+            line-height: 1.6;
+            margin: 25px 0;
+        }
+
+        .event-box {
+            background: #f7f7ff;
+            border: 1px solid #e1def5;
+            padding: 22px;
+            border-radius: 14px;
+            margin-bottom: 25px;
+        }
+
+        .event-name {
+            font-size: 21px;
+            font-weight: bold;
+        }
+
+        .price {
+            font-size: 30px;
+            font-weight: bold;
+            color: #4f35e8;
+        }
+
+        button {
+            width: 100%;
+            padding: 17px;
+            background: #4f35e8;
+            color: white;
+            border: none;
+            border-radius: 11px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover:not(:disabled) {
+            background: #3e28c4;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #message {
+            margin-top: 18px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 600px) {
+            main {
+                margin: 20px auto;
+            }
+
+            .card {
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <strong>EventHub</strong>
+    <a href="/home.html">Back to Events</a>
+</header>
+
+<main>
+    <div class="card">
+
+        <h1>Event Payment</h1>
+
+        <p class="subtitle">
+            Complete your demo payment to confirm
+            your event booking.
+        </p>
+
+        <div class="warning">
+            <strong>DEMO PAYMENT ONLY</strong>
+            <p>
+                No real money will be charged.
+                Do not enter any bank card details.
+            </p>
+        </div>
+
+        <div class="event-box">
+
+            <p>Selected Event</p>
+
+            <div id="eventName" class="event-name">
+                Loading event...
+            </div>
+
+            <hr>
+
+            <p>Ticket Price</p>
+
+            <div id="price" class="price">
+                Loading...
+            </div>
+
+        </div>
+
+        <button id="payButton" disabled>
+            Loading Payment...
+        </button>
+
+        <p id="message"
+           role="status"
+           aria-live="polite"></p>
+
+        <p class="subtitle">
+            After successful demo payment, your
+            booking and QR ticket will be available.
+        </p>
+
+    </div>
+</main>
+
+<script>
+    const params = new URLSearchParams(
+        window.location.search
+    );
+
+    const eventId = params.get("id");
+
+    const payButton =
+        document.getElementById("payButton");
+
+    const message =
+        document.getElementById("message");
+
+    const eventName =
+        document.getElementById("eventName");
+
+    const priceElement =
+        document.getElementById("price");
+
+    let processing = false;
+
+    function showMessage(text, isError = false) {
+        message.textContent = text;
+
+        message.style.color = isError
+            ? "#dc2626"
+            : "#15803d";
+    }
+
+    async function loadEvent() {
+
+        if (!eventId || !/^[1-9]\d*$/.test(eventId)) {
+            showMessage("Invalid event ID.", true);
+            return;
+        }
+
+        try {
+
+            const response = await fetch(
+                `/api/demo-payment/event/${eventId}`
+            );
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(
+                    data.message || "Event not found."
+                );
+            }
+
+            if (data.status !== "published") {
+                throw new Error(
+                    "This event is not available."
+                );
+            }
+
+            const price = Number(data.price);
+
+            if (!Number.isFinite(price) || price <= 0) {
+                throw new Error(
+                    "This is a free event. Use Book Now."
+                );
+            }
+
+            eventName.textContent = data.title;
+
+            priceElement.textContent =
+                "LKR " + price.toLocaleString(
+                    "en-LK",
+                    {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }
+                );
+
+            payButton.disabled = false;
+
+            payButton.textContent =
+                "Complete Demo Payment";
+
+        } catch (error) {
+
+            eventName.textContent =
+                "Event unavailable";
+
+            priceElement.textContent = "—";
+
+            showMessage(error.message, true);
+        }
+    }
+
+    payButton.addEventListener(
+        "click",
+        async function () {
+
+            if (processing || payButton.disabled) {
+                return;
+            }
+
+            processing = true;
+            payButton.disabled = true;
+
+            payButton.textContent =
+                "Processing Payment...";
+
+            showMessage(
+                "Processing demo payment..."
+            );
+
+            try {
+
+                const response = await fetch(
+                    "/api/demo-payment/pay",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            event_id: Number(eventId)
+                        })
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(
+                        data.message || "Payment failed."
+                    );
+                }
+
+                if (!data.booking_id) {
+                    throw new Error(
+                        "Booking ID was not returned."
+                    );
+                }
+
+                showMessage(
+                    "Demo payment successful! Opening ticket..."
+                );
+
+                window.location.href =
+                    `/ticket.html?id=${data.booking_id}`;
+
+            } catch (error) {
+
+                showMessage(error.message, true);
+
+                payButton.disabled = false;
+
+                payButton.textContent =
+                    "Try Demo Payment Again";
+
+                processing = false;
+            }
+        }
+    );
+
+    loadEvent();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventHub - Manage Users</title>
+    <link rel="stylesheet" href="admin.css">
+    <style>
+        .users-page { font-family: Arial, sans-serif; }
+        .users-page .main-content { min-width: 0; }
+        .users-summary { display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:18px;margin:22px 0 25px; }
+        .users-summary article { background:#fff;border-radius:14px;padding:22px;box-shadow:0 4px 18px #17213d0b; }
+        .users-summary .number { font-size:28px;font-weight:800;color:#131c46;margin-top:10px; }
+        .users-summary .caption {color:#647093;font-size:14px;}
+        .users-board {background:white;border-radius:15px;padding:24px;box-shadow:0 3px 18px #17213d0b;}
+        .users-controls {display:flex;gap:12px;flex-wrap:wrap;margin:18px 0;}
+        .users-controls input,.users-controls select {padding:12px 14px;border:1px solid #d8def0;border-radius:9px;font-size:14px;background:white;color:#17213d;}
+        .users-controls input {flex:1;min-width:200px;}
+        .users-controls select {min-width:140px;}
+        .users-scroller {overflow-x:auto;}
+        .users-table {border-collapse:collapse;width:100%;min-width:760px;}
+        .users-table th {background:#f5f6fc;text-align:left;color:#526080;font-size:13px;}
+        .users-table th,.users-table td {padding:15px 12px;border-bottom:1px solid #ebedf5;vertical-align:middle;}
+        .users-table td {font-size:14px;color:#162143;}
+        .users-table td.email {word-break:break-all;}
+        .users-table tr:last-child td {border-bottom:none;}
+        .role-pill {display:inline-block;padding:6px 12px;border-radius:99px;background:#efebff;color:#4d37d9;font-size:12px;font-weight:bold;}
+        .role-pill.admin {background:#fce7ed;color:#9e244d;}
+        .role-pill.organizer {background:#dff5ec;color:#167251;}
+        .role-controls {display:flex;gap:7px;align-items:center;}
+        .role-controls select {max-width:125px;padding:9px;border:1px solid #d9ddf1;border-radius:8px;background:#fff;}
+        .role-controls button {border:0;background:#4f35e8;color:#fff;border-radius:8px;padding:10px 13px;cursor:pointer;font-weight:bold;}
+        .role-controls button:disabled {opacity:.45;cursor:default;}
+        .help-note {font-size:13px;color:#697494;margin-top:13px;line-height:1.55;}
+        .feedback {min-height:23px;margin:12px 0;color:#274375;font-size:14px;}
+        .feedback.error {color:#bb2246;}
+        .feedback.success {color:#17734b;}
+        @media(max-width:1000px) {.users-summary {grid-template-columns:repeat(2,minmax(130px,1fr));}}
+        @media(max-width:600px) {.users-summary {grid-template-columns:1fr 1fr;gap:9px;}.users-summary article{padding:14px}.users-board{padding:15px;}}
+    </style>
+</head>
+<body class="users-page">
+<div class="dashboard-layout">
+    <aside class="sidebar">
+        <h2 class="logo">EventHub</h2>
+        <p class="role-label">ADMIN PANEL</p>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html">◫ Dashboard</a>
+            <a href="add-event.html">＋ Add Event</a>
+            <a href="event-control.html">▤ Manage Events</a>
+            <a href="manage-users.html" class="active">♙ Manage Users</a>
+            <a href="../home.html">⌂ View Website</a>
+        </nav>
+        <div class="sidebar-bottom"><a href="../login.html" id="logoutLink">↪ Logout</a></div>
+    </aside>
+    <main class="main-content">
+        <header class="topbar">
+            <div><h1>Manage Users</h1><p>View and manage registered EventHub accounts.</p></div>
+            <div class="admin-profile"><span class="avatar">A</span><span>Administrator</span></div>
+        </header>
+        <section class="users-summary" aria-label="User overview">
+            <article><div class="caption">Total Users</div><div class="number" id="totalUsers">—</div></article>
+            <article><div class="caption">Administrators</div><div class="number" id="totalAdmins">—</div></article>
+            <article><div class="caption">Organizers</div><div class="number" id="totalOrganizers">—</div></article>
+            <article><div class="caption">Participants</div><div class="number" id="totalParticipants">—</div></article>
+        </section>
+        <section class="users-board">
+            <h2>Registered Users</h2>
+            <p class="help-note">Search users and change a Participant to Organizer, or an Organizer to Participant. Admin accounts cannot be modified here.</p>
+            <div class="users-controls">
+                <input id="userSearch" type="search" placeholder="Search by name or email..." aria-label="Search users">
+                <select id="roleFilter" aria-label="Filter by role">
+                    <option value="all">All Roles</option><option value="admin">Administrators</option>
+                    <option value="organizer">Organizers</option><option value="user">Participants</option>
+                </select>
+            </div>
+            <div id="feedback" class="feedback" role="status" aria-live="polite"></div>
+            <div class="users-scroller">
+                <table class="users-table">
+                    <thead><tr><th>ID</th><th>Full Name</th><th>Email</th><th>Role</th><th>Registered</th><th>Action</th></tr></thead>
+                    <tbody id="usersBody"><tr><td colspan="6">Loading registered users...</td></tr></tbody>
+                </table>
+            </div>
+            <p class="help-note">Changes to a user's role take effect when that user signs out and signs in again. This page never displays passwords.</p>
+        </section>
+    </main>
+</div>
+<script>
+(() => {
+    'use strict';
+    let allUsers = [];
+    const body = document.getElementById('usersBody');
+    const search = document.getElementById('userSearch');
+    const filter = document.getElementById('roleFilter');
+    const feedback = document.getElementById('feedback');
+    const labels = {admin:'Administrator',organizer:'Organizer',user:'Participant'};
+
+    function notice(message, kind='') {
+        feedback.textContent = message;
+        feedback.className = `feedback ${kind}`;
+    }
+    const td = (row,value,extraClass='') => {
+        const el=document.createElement('td');el.textContent=String(value??'');
+        if(extraClass)el.className=extraClass;
+        row.appendChild(el);return el;
+    };
+    function render() {
+        const term=search.value.trim().toLowerCase();const role=filter.value;
+        const visible=allUsers.filter(u =>
+            (role==='all'||u.role===role) &&
+            (!term || String(u.full_name||'').toLowerCase().includes(term) || String(u.email||'').toLowerCase().includes(term))
+        );
+        body.replaceChildren();
+        if(!visible.length) {
+            const tr=body.insertRow();td(tr,'No matching users found.').colSpan=6;return;
+        }
+        for(const user of visible) {
+            const tr=body.insertRow();
+            td(tr,user.user_id);
+            td(tr,user.full_name);
+            td(tr,user.email,'email');
+            const roleCell=tr.insertCell();
+            const pill=document.createElement('span');pill.className='role-pill '+user.role;
+            pill.textContent=labels[user.role]||user.role;roleCell.appendChild(pill);
+            td(tr,String(user.created_at||'').slice(0,16));
+            const action=tr.insertCell();
+            if(user.role==='admin') {
+                const p=document.createElement('span');p.className='help-note';p.textContent='Protected';action.appendChild(p);continue;
+            }
+            const holder=document.createElement('div');holder.className='role-controls';
+            const sel=document.createElement('select');sel.setAttribute('aria-label','Change role for '+user.full_name);
+            for(const [value,label] of [['user','Participant'],['organizer','Organizer']]) {
+                const opt=document.createElement('option');opt.value=value;opt.textContent=label;sel.appendChild(opt);
+            }
+            sel.value=user.role;
+            const button=document.createElement('button');button.type='button';button.textContent='Save';
+            button.disabled=true;
+            sel.addEventListener('change',()=>{button.disabled=sel.value===user.role;});
+            button.addEventListener('click',()=>changeRole(user,sel,button));
+            holder.append(sel,button);action.appendChild(holder);
+        }
+    }
+    function renderStats() {
+        document.getElementById('totalUsers').textContent=allUsers.length;
+        for(const [key,role] of [['totalAdmins','admin'],['totalOrganizers','organizer'],['totalParticipants','user']]) {
+            document.getElementById(key).textContent=allUsers.filter(u=>u.role===role).length;
+        }
+    }
+    async function loadUsers() {
+        notice('Loading users...');
+        try {
+            const response=await fetch('/api/admin/users',{credentials:'same-origin',cache:'no-store'});
+            const data=await response.json();
+            if(!response.ok||data.success!==true||!Array.isArray(data.users)) throw new Error(data.message||'Could not load users');
+            allUsers=data.users;
+            renderStats();render();notice('Users loaded successfully.','success');
+        } catch(error) {
+            body.replaceChildren();
+            const tr=body.insertRow();td(tr,'Unable to load users. Check the EventHub server.').colSpan=6;
+            notice(error.message||'Unable to load users.','error');
+        }
+    }
+    async function changeRole(user,select,button) {
+        const next=select.value;
+        if(next===user.role)return;
+        if(!window.confirm(`Change ${user.full_name} from ${labels[user.role]} to ${labels[next]}?`)) {
+            select.value=user.role;button.disabled=true;return;
+        }
+        button.disabled=true;select.disabled=true;notice('Saving role...');
+        try {
+            const res=await fetch('/api/admin/users/'+encodeURIComponent(user.user_id)+'/role', {
+                method:'PUT',credentials:'same-origin',
+                headers:{'Content-Type':'application/json','X-EventHub-Admin':'role-update'},
+                body:JSON.stringify({role:next})
+            });
+            const data=await res.json();
+            if(!res.ok||data.success!==true)throw new Error(data.message||'Role update failed');
+            user.role=next;renderStats();render();
+            notice('Role updated. The user must sign in again to use the new role.','success');
+        } catch(error) {
+            select.value=user.role;select.disabled=false;button.disabled=true;
+            notice(error.message||'Could not update role.','error');
+        }
+    }
+    search.addEventListener('input',render);
+    filter.addEventListener('change',render);
+    document.getElementById('logoutLink').addEventListener('click',async(event)=>{
+        event.preventDefault();
+        try {await fetch('/logout',{method:'POST',credentials:'same-origin'});}catch(e){}
+        window.location.href='/login.html';
+    });
+    loadUsers();
+})();
+</script>
+</body>
+</html>

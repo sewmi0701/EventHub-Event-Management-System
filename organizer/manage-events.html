@@ -1,0 +1,577 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manage My Events | EventHub</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f5f6ff;
+    color: #162048;
+}
+
+header {
+    background: #151a49;
+    color: white;
+    padding: 22px 7%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+main {
+    max-width: 1100px;
+    margin: 45px auto;
+    padding: 0 20px;
+}
+
+h1 {
+    font-size: 34px;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    color: #7180a2;
+    margin-bottom: 30px;
+}
+
+.event-card,
+.panel {
+    background: white;
+    padding: 26px;
+    border-radius: 16px;
+    margin-bottom: 18px;
+    box-shadow: 0 5px 25px #202a6010;
+}
+
+.event-card h2 {
+    margin: 0 0 12px;
+    font-size: 22px;
+}
+
+.event-card p {
+    color: #65718f;
+    line-height: 1.7;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+button,
+.button-link {
+    display: inline-block;
+    border: 0;
+    background: #4f35e8;
+    color: white;
+    padding: 12px 17px;
+    border-radius: 9px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+button:hover,
+.button-link:hover {
+    opacity: .88;
+}
+
+.secondary {
+    background: #9589ec;
+}
+
+.danger {
+    background: #dc405c;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 18px;
+    color: #4f35e8;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 14px;
+}
+
+input,
+textarea {
+    width: 100%;
+    margin-top: 7px;
+    padding: 13px;
+    border: 1px solid #d9def1;
+    border-radius: 9px;
+    font: inherit;
+}
+
+textarea {
+    min-height: 110px;
+    resize: vertical;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+#notice {
+    font-weight: bold;
+}
+
+.success {
+    color: #138445;
+}
+
+.error {
+    color: #c3344a;
+}
+
+.participant {
+    border-bottom: 1px solid #e9eaf2;
+    padding: 14px 0;
+    line-height: 1.7;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+@media (max-width: 650px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    header {
+        padding: 20px;
+    }
+
+    h1 {
+        font-size: 28px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <a href="/organizer/dashboard.html">
+        EventHub
+    </a>
+
+    <span>Organizer Panel</span>
+</header>
+
+<main>
+
+<a class="back-link"
+   href="/organizer/dashboard.html">
+    ← Back to Dashboard
+</a>
+
+<h1>Manage My Events</h1>
+
+<p class="subtitle">
+    Edit events, cancel events and view participants.
+</p>
+
+<p id="notice" role="status"></p>
+
+<section id="eventList">
+    Loading your events...
+</section>
+
+<section id="editBox" class="panel" hidden>
+
+    <h2>Edit Event</h2>
+
+    <form id="editForm">
+
+        <label>
+            Event Name
+            <input id="editTitle" required maxlength="150">
+        </label>
+
+        <div class="form-grid">
+            <label>
+                Category
+                <input id="editCategory" required maxlength="80">
+            </label>
+
+            <label>
+                Location
+                <input id="editLocation" required maxlength="200">
+            </label>
+
+            <label>
+                Date
+                <input id="editDate" type="date" required>
+            </label>
+
+            <label>
+                Time
+                <input id="editTime" type="time" required>
+            </label>
+        </div>
+
+        <label id="capacityLabel">
+            Maximum Participants
+            <input id="editCapacity" type="number" min="1">
+        </label>
+
+        <label>
+            Description
+            <textarea id="editDescription"
+                      maxlength="5000"
+                      required></textarea>
+        </label>
+
+        <div class="actions">
+            <button type="submit">
+                Save Changes
+            </button>
+
+            <button type="button"
+                    class="secondary"
+                    onclick="hideEdit()">
+                Close
+            </button>
+        </div>
+
+    </form>
+
+</section>
+
+<section id="peopleBox" class="panel" hidden>
+
+    <h2 id="peopleTitle">Participants</h2>
+
+    <div id="participantsList"></div>
+
+</section>
+
+</main>
+
+<script>
+
+const eventList = document.getElementById("eventList");
+const editBox = document.getElementById("editBox");
+const editForm = document.getElementById("editForm");
+const peopleBox = document.getElementById("peopleBox");
+const participantsList =
+    document.getElementById("participantsList");
+
+function showMessage(message, error = false) {
+    const notice = document.getElementById("notice");
+
+    notice.textContent = message;
+    notice.className = error ? "error" : "success";
+}
+
+async function api(url, options = {}) {
+    const response = await fetch(url, {
+        credentials: "same-origin",
+        ...options
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+        throw new Error(
+            data.message || "Request failed."
+        );
+    }
+
+    return data;
+}
+
+function makeButton(label, handler, className = "") {
+    const button = document.createElement("button");
+
+    button.type = "button";
+    button.textContent = label;
+    button.className = className;
+    button.addEventListener("click", handler);
+
+    return button;
+}
+
+async function loadEvents() {
+    try {
+        const data = await api("/api/organizer/events");
+
+        eventList.replaceChildren();
+
+        if (data.events.length === 0) {
+            eventList.textContent =
+                "You have not created any events yet.";
+            return;
+        }
+
+        data.events.forEach(event => {
+            const card = document.createElement("article");
+            card.className = "event-card";
+
+            const title = document.createElement("h2");
+            title.textContent = event.title;
+
+            const details = document.createElement("p");
+
+            details.textContent =
+                `Date: ${event.event_date} | ` +
+                `Time: ${event.event_time} | ` +
+                `Location: ${event.location}`;
+
+            const status = document.createElement("p");
+
+            status.textContent =
+                `Status: ${event.status} | ` +
+                `Confirmed Bookings: ${event.booking_count}`;
+
+            const actions = document.createElement("div");
+            actions.className = "actions";
+
+            if (event.status === "published") {
+                actions.appendChild(
+                    makeButton(
+                        "Edit Event",
+                        () => openEdit(event.event_id)
+                    )
+                );
+            }
+
+            actions.appendChild(
+                makeButton(
+                    "View Participants",
+                    () => viewParticipants(event.event_id),
+                    "secondary"
+                )
+            );
+
+            if (event.status === "published") {
+                actions.appendChild(
+                    makeButton(
+                        "Cancel Event",
+                        () => cancelEvent(event.event_id),
+                        "danger"
+                    )
+                );
+            }
+
+            card.append(
+                title,
+                details,
+                status,
+                actions
+            );
+
+            eventList.appendChild(card);
+        });
+
+    } catch (error) {
+        showMessage(error.message, true);
+    }
+}
+
+async function openEdit(eventId) {
+    try {
+        const data = await api(
+            `/api/organizer/management/${eventId}`
+        );
+
+        const event = data.event;
+
+        editForm.dataset.eventId = eventId;
+
+        document.getElementById("editTitle").value =
+            event.title || "";
+
+        document.getElementById("editCategory").value =
+            event.category || "";
+
+        document.getElementById("editLocation").value =
+            event.location || "";
+
+        document.getElementById("editDate").value =
+            event.event_date || "";
+
+        document.getElementById("editTime").value =
+            event.event_time || "";
+
+        document.getElementById("editDescription").value =
+            event.description || "";
+
+        const capacityLabel =
+            document.getElementById("capacityLabel");
+
+        const capacityInput =
+            document.getElementById("editCapacity");
+
+        if (event.max_participants == null) {
+            capacityLabel.hidden = true;
+            capacityInput.value = "";
+        } else {
+            capacityLabel.hidden = false;
+            capacityInput.value = event.max_participants;
+        }
+
+        editBox.hidden = false;
+
+        editBox.scrollIntoView({
+            behavior: "smooth"
+        });
+
+    } catch (error) {
+        showMessage(error.message, true);
+    }
+}
+
+function hideEdit() {
+    editBox.hidden = true;
+}
+
+editForm.addEventListener("submit", async event => {
+    event.preventDefault();
+
+    const eventId = editForm.dataset.eventId;
+
+    const payload = {
+        title: document.getElementById("editTitle").value,
+        category: document.getElementById("editCategory").value,
+        location: document.getElementById("editLocation").value,
+        event_date: document.getElementById("editDate").value,
+        event_time: document.getElementById("editTime").value,
+        description:
+            document.getElementById("editDescription").value
+    };
+
+    if (!document.getElementById("capacityLabel").hidden) {
+        payload.max_participants =
+            document.getElementById("editCapacity").value;
+    }
+
+    try {
+        const result = await api(
+            `/api/organizer/management/${eventId}`,
+            {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            }
+        );
+
+        hideEdit();
+        showMessage(result.message);
+        await loadEvents();
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+
+    } catch (error) {
+        showMessage(error.message, true);
+    }
+});
+
+async function viewParticipants(eventId) {
+    try {
+        const data = await api(
+            `/api/organizer/management/${eventId}/participants`
+        );
+
+        document.getElementById("peopleTitle").textContent =
+            `Participants - Event #${eventId}`;
+
+        participantsList.replaceChildren();
+
+        if (data.participants.length === 0) {
+            participantsList.textContent =
+                "No participants found.";
+        }
+
+        data.participants.forEach(person => {
+            const item = document.createElement("div");
+            item.className = "participant";
+
+            item.textContent =
+                `${person.participant_name} | ` +
+                `${person.email} | ` +
+                `Booking #${person.booking_id} | ` +
+                `${person.status}`;
+
+            participantsList.appendChild(item);
+        });
+
+        peopleBox.hidden = false;
+
+        peopleBox.scrollIntoView({
+            behavior: "smooth"
+        });
+
+    } catch (error) {
+        showMessage(error.message, true);
+    }
+}
+
+async function cancelEvent(eventId) {
+
+    const confirmed = confirm(
+        "Are you sure you want to cancel this event?"
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        const result = await api(
+            `/api/organizer/management/${eventId}`,
+            {
+                method: "DELETE"
+            }
+        );
+
+        showMessage(result.message);
+
+        hideEdit();
+        peopleBox.hidden = true;
+
+        await loadEvents();
+
+    } catch (error) {
+        showMessage(error.message, true);
+    }
+}
+
+loadEvents();
+
+</script>
+
+</body>
+</html>

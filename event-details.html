@@ -1,0 +1,393 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Details | EventHub</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f6ff;
+            color: #142044;
+        }
+
+        header {
+            background: #171b4b;
+            color: white;
+            padding: 22px 7%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 25px;
+            font-weight: bold;
+        }
+
+        header a {
+            color: white;
+            text-decoration: none;
+        }
+
+        main {
+            max-width: 950px;
+            margin: 45px auto;
+            padding: 0 20px;
+        }
+
+        .back {
+            display: inline-block;
+            color: #4935df;
+            text-decoration: none;
+            margin-bottom: 20px;
+        }
+
+        .event-card {
+            background: white;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+        }
+
+        .event-image {
+            width: 100%;
+            height: 310px;
+            object-fit: cover;
+            display: none;
+        }
+
+        .placeholder {
+            height: 240px;
+            background: #eae8ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 70px;
+        }
+
+        .content { padding: 35px; }
+
+        .category {
+            display: inline-block;
+            background: #ece9ff;
+            color: #4935df;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        h1 {
+            font-size: 32px;
+            margin: 20px 0;
+        }
+
+        .info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .info-item {
+            background: #f7f8ff;
+            padding: 17px;
+            border-radius: 10px;
+        }
+
+        .info-item strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .description {
+            color: #64748b;
+            line-height: 1.8;
+            white-space: pre-wrap;
+        }
+
+        .book-btn {
+            background: #4935df;
+            color: white;
+            border: none;
+            border-radius: 9px;
+            padding: 15px 35px;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+
+        .book-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #status {
+            text-align: center;
+            padding: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .info { grid-template-columns: 1fr; }
+            .content { padding: 22px; }
+            h1 { font-size: 25px; }
+            .event-image { height: 220px; }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">EventHub</div>
+    <a href="/home.html">Home</a>
+</header>
+
+<main>
+    <a class="back" href="/home.html">← Back to Events</a>
+
+    <p id="status">Loading event details...</p>
+
+    <article class="event-card" id="eventDetails" hidden>
+
+        <img id="eventImage" class="event-image" alt="Event image">
+
+        <div id="imagePlaceholder" class="placeholder">📅</div>
+
+        <div class="content">
+            <span class="category" id="category"></span>
+
+            <h1 id="eventTitle"></h1>
+
+            <div class="info">
+                <div class="info-item">
+                    <strong>📅 Event Date</strong>
+                    <span id="eventDate"></span>
+                </div>
+
+                <div class="info-item">
+                    <strong>🕒 Event Time</strong>
+                    <span id="eventTime"></span>
+                </div>
+
+                <div class="info-item">
+                    <strong>📍 Location</strong>
+                    <span id="location"></span>
+                </div>
+
+                <div class="info-item">
+                    <strong>👥 Maximum Participants</strong>
+                    <span id="participants"></span>
+                </div>
+            </div>
+
+            <h2>About This Event</h2>
+            <p class="description" id="description"></p>
+
+            
+<button class="book-btn" id="bookBtn" type="button" >
+    Book Now
+</button>
+
+<p id="bookingMessage" role="status"></p>
+
+        </div>
+    </article>
+</main>
+
+<script>
+    async function loadEventDetails() {
+        const params = new URLSearchParams(window.location.search);
+        const eventId = params.get("id");
+
+        const status = document.getElementById("status");
+        const details = document.getElementById("eventDetails");
+
+        if (!eventId || !/^[1-9]\d*$/.test(eventId)) {
+            status.textContent = "Invalid event ID.";
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/events/${eventId}`);
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || "Event not found.");
+            }
+
+            const event = result.event;
+
+            document.getElementById("eventTitle").textContent =
+                event.title;
+
+            document.getElementById("category").textContent =
+                event.category;
+
+            document.getElementById("eventDate").textContent =
+                event.event_date;
+
+            document.getElementById("eventTime").textContent =
+                event.event_time;
+
+            document.getElementById("location").textContent =
+                event.location;
+
+            document.getElementById("participants").textContent =
+                event.max_participants;
+
+            document.getElementById("description").textContent =
+                event.description || "No description available.";
+
+            if (event.image_path) {
+                const image = document.getElementById("eventImage");
+                const placeholder =
+                    document.getElementById("imagePlaceholder");
+
+                image.onload = function() {
+                    image.style.display = "block";
+                    placeholder.style.display = "none";
+                };
+
+                image.onerror = function() {
+                    image.style.display = "none";
+                    placeholder.style.display = "flex";
+                };
+
+                image.src = event.image_path;
+            }
+
+            status.hidden = true;
+            details.hidden = false;
+
+document.getElementById("bookBtn").disabled = false;
+
+
+        } catch (error) {
+            status.textContent = error.message;
+        }
+    }
+
+
+document.getElementById("bookBtn").addEventListener("click", async function () {
+
+    const message = document.getElementById("bookingMessage");
+    const eventId = Number(
+        new URLSearchParams(window.location.search).get("id")
+    );
+
+    if (!Number.isSafeInteger(eventId) || eventId <= 0) {
+        message.textContent = "Invalid event ID.";
+        return;
+    }
+
+    this.disabled = true;
+    message.textContent = "Processing booking...";
+
+    try {
+        const response = await fetch("/api/bookings", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ event_id: eventId })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+            message.textContent =
+                "✅ Booking Confirmed! ID: " + result.booking_id;
+            this.textContent = "Booked";
+        } else {
+            message.textContent = result.message || "Booking failed.";
+            this.disabled = false;
+        }
+
+    } catch (error) {
+        message.textContent = "Server connection error.";
+        this.disabled = false;
+    }
+});
+
+    loadEventDetails();
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+    const eventId = new URLSearchParams(
+        window.location.search
+    ).get("id");
+
+    if (!eventId || !/^\d+$/.test(eventId)) return;
+
+    try {
+        const response = await fetch(
+            `/api/demo-payment/event/${eventId}`
+        );
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+
+        if (!data.success || Number(data.price) <= 0) {
+            return;
+        }
+
+        const payLink = document.createElement("a");
+
+        payLink.href = `/pay-demo.html?id=${eventId}`;
+
+        payLink.textContent =
+            `Pay Now - LKR ${Number(data.price).toFixed(2)}`;
+
+        payLink.style.cssText = `
+            display:inline-block;
+            background:#4f35e8;
+            color:white;
+            padding:17px 28px;
+            border-radius:10px;
+            text-decoration:none;
+            font-size:17px;
+            font-weight:600;
+        `;
+
+        function replaceBookingButton() {
+            const bookButton = [...document.querySelectorAll("button")]
+                .find(button =>
+                    button.textContent.trim().toLowerCase() === "book now"
+                );
+
+            if (!bookButton) return false;
+
+            bookButton.replaceWith(payLink);
+            return true;
+        }
+
+        if (!replaceBookingButton()) {
+            const observer = new MutationObserver(() => {
+                if (replaceBookingButton()) {
+                    observer.disconnect();
+                }
+            });
+
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        }
+
+    } catch (error) {
+        console.error("Payment button error:", error);
+    }
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,207 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>EventHub - Register</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <main class="register-container">
+
+        <!-- LEFT SIDE - BRANDING -->
+        <section class="left-side">
+
+            <div class="brand-content">
+                <h1>EventHub</h1>
+                <p>
+                    Join Our<br>
+                    Event Community
+                </p>
+            </div>
+
+            <!-- DECORATIVE PURPLE WAVES -->
+            <div class="waves" aria-hidden="true">
+                <svg
+                    viewBox="0 0 420 190"
+                    preserveAspectRatio="none"
+                    xmlns="http://www.w3.org/2000/svg">
+
+                    <!-- Light wave at the back -->
+                    <path
+                        d="M0 115
+                           C55 105 85 110 120 140
+                           C165 177 200 178 245 148
+                           C300 112 335 125 420 165
+                           L420 190 L0 190 Z"
+                        fill="#DCD8FF"/>
+
+                    <!-- Blue wave on the left -->
+                    <path
+                        d="M0 42
+                           C65 10 95 75 125 120
+                           C155 169 175 181 225 190
+                           L0 190 Z"
+                        fill="#80AEF7"/>
+
+                    <!-- Medium purple wave -->
+                    <path
+                        d="M0 82
+                           C60 55 100 130 135 165
+                           C150 180 165 187 195 190
+                           L0 190 Z"
+                        fill="#9689F0"/>
+
+                    <!-- Dark purple front wave -->
+                    <path
+                        d="M0 112
+                           C45 90 75 130 105 155
+                           C125 174 155 185 175 190
+                           L0 190 Z"
+                        fill="#6045DF"/>
+
+                </svg>
+            </div>
+
+        </section>
+
+        <!-- RIGHT SIDE - REGISTER FORM -->
+        <section class="right-side">
+
+            <div class="form-content">
+
+                <h2>Register</h2>
+
+                <p class="subtitle">
+                    Create your account to get started
+                </p>
+
+                <form id="registerForm">
+
+                    <label for="fullname">Full Name</label>
+                    <input
+                        type="text"
+                        id="fullname"
+                        name="fullname"
+                        placeholder="Full Name"
+                        autocomplete="name"
+                        required
+                    >
+
+                    <label for="email">Email</label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="Email"
+                        autocomplete="email"
+                        required
+                    >
+
+                    <label for="password">Password</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Password"
+                        autocomplete="new-password"
+                        minlength="8"
+                        required
+                    >
+
+                    <label for="confirmPassword">
+                        Confirm Password
+                    </label>
+                    <input
+                        type="password"
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        placeholder="Confirm Password"
+                        autocomplete="new-password"
+                        minlength="8"
+                        required
+                    >
+
+                    <button type="submit" class="register-btn">
+                        Register
+                    </button>
+
+                    <p id="formMessage"
+                       class="form-message"
+                       role="status"
+                       aria-live="polite"></p>
+
+                </form>
+
+                <p class="login-text">
+                    Already have an account?
+                    <a href="login.html">Login</a>
+                </p>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <script>
+        
+const form = document.getElementById("registerForm");
+const message = document.getElementById("formMessage");
+
+form.addEventListener("submit", async function(event) {
+    event.preventDefault();
+
+    const name = document.getElementById("fullname").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const confirmPassword =
+        document.getElementById("confirmPassword").value;
+
+    if (password !== confirmPassword) {
+        message.textContent = "Passwords do not match!";
+        message.className = "form-message error";
+        return;
+    }
+
+    try {
+        const response = await fetch("/register", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                full_name: name,
+                email: email,
+                password: password
+            })
+        });
+
+        const result = await response.json();
+
+        message.textContent = result.message;
+        message.className = result.success
+            ? "form-message success"
+            : "form-message error";
+
+        if (result.success) {
+            form.reset();
+        }
+
+    } catch (error) {
+        message.textContent =
+            "Cannot connect to the server.";
+        message.className = "form-message error";
+    }
+});
+
+    </script>
+
+</body>
+</html>

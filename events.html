@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#211a66" />
+  <title>All Events | EventHub</title>
+  <style>
+    :root {
+      --purple: #4830eb;
+      --navy: #151942;
+      --ink: #142047;
+      --muted: #7d88a9;
+      --canvas: #f7f7ff;
+      --line: #e8eaf4;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: var(--ink); background: var(--canvas); }
+    a { text-decoration: none; }
+    .nav { background: #fff; border-bottom: 1px solid #ececf5; }
+    .nav-inner {
+      max-width: 1380px; margin: auto; min-height: 100px; padding: 0 26px;
+      display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 18px;
+    }
+    .logo { color: var(--purple); font-size: 33px; font-weight: 800; letter-spacing: -1.3px; white-space: nowrap; }
+    .nav-links { display: flex; justify-content: center; gap: 44px; align-items: center; }
+    .nav-links a { color: #1d2b52; font-weight: 700; font-size: 16px; white-space: nowrap; }
+    .nav-links a.active, .nav-links a:hover { color: var(--purple); }
+    .right-links { justify-self: end; display: flex; align-items: center; gap: 12px; }
+    .right-links a { color: #3528c8; font-size: 14px; font-weight: 700; white-space: nowrap; }
+    .right-links a:hover { text-decoration: underline; }
+    .hero { background: linear-gradient(112deg, #141943 0%, #221a60 52%, #382779 100%); color: white; }
+    .hero-inner { max-width: 1380px; margin: auto; padding: 64px 26px 70px; }
+    .eyebrow { color: #b7a5ff; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 2.8px; }
+    h1 { margin: 16px 0 14px; font-size: clamp(36px, 4.2vw, 57px); letter-spacing: -1.5px; }
+    .hero p { color: #e9e6ff; font-size: 17px; line-height: 1.65; margin: 0; }
+    main { max-width: 1380px; padding: 64px 26px 85px; margin: auto; min-height: 430px; }
+    .section-heading { display:flex; align-items:center; justify-content:space-between; gap:24px; margin-bottom:28px; }
+    .section-heading h2 { font-size: 31px; letter-spacing: -.65px; margin:0; }
+    .count { color: var(--muted); font-size: 14px; margin: 8px 0 0; }
+    .return { color: var(--purple); font-weight: 700; font-size:14px; white-space: nowrap; }
+    .return:hover { text-decoration: underline; }
+    .grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 26px; }
+    .card {
+      background:#fff; border:1px solid #e3e7f1; border-radius:17px; overflow:hidden;
+      box-shadow: 0 10px 28px rgba(24, 27, 73, .04);
+      display:flex; flex-direction:column; min-height:300px;
+      transition:transform .2s ease,box-shadow .2s ease;
+    }
+    .card:hover { transform:translateY(-4px); box-shadow:0 15px 35px rgba(24,27,73,.12); }
+    .cover { height: 190px; background: #f0f2fa; overflow:hidden; }
+    .cover img { width:100%; height:100%; object-fit:cover; display:block; }
+    .card-body { display:flex; flex-direction:column; flex:1; padding:29px 27px 25px; }
+    .card.no-image .card-body { padding-top:34px; }
+    .cover-icon-small { display:block; font-size:35px; line-height:1; margin:0 0 24px; }
+    .tag { display:inline-flex; align-self:flex-start; padding:7px 14px; border-radius:50px; background:#eee8ff; color:#5426ca; font-size:12px; font-weight:700; }
+    .card h3 { margin:17px 0 14px; font-size:21px; line-height:1.32; letter-spacing:-.2px; overflow-wrap:anywhere; }
+    .meta { margin:5px 0; color:#71819c; line-height:1.6; font-size:14px; overflow-wrap:anywhere; }
+    .foot { display:flex; margin-top:auto; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding-top:23px; }
+    .price { font-size:14px; font-weight:800; color:#322a72; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; padding:11px 17px; border-radius:9px; background:var(--purple); color:white; font-weight:700; font-size:13px; }
+    .btn:hover { background:#3320bd; }
+    .notice { background:white; border:1px solid #e2e5f2; border-radius:15px; padding:24px; color:var(--muted); }
+    .past-section { margin-top:65px; }
+    .past-section .card { opacity:.86; }
+    footer { padding:25px; color:#7986a0; font-size:13px; text-align:center; }
+    @media (max-width:970px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));}.nav-links{gap:23px;}.logo{font-size:29px;}}
+    @media (max-width:680px){
+      .grid{grid-template-columns:1fr;}.nav-inner{display:flex;flex-wrap:wrap;min-height:auto;justify-content:space-between;padding:19px 20px;}
+      .nav-links{order:3;width:100%;justify-content:flex-start;gap:22px;}.right-links{margin-left:auto;}
+      .hero-inner{padding:48px 20px 53px;}main{padding:43px 19px 60px;}
+      .section-heading{flex-wrap:wrap;}.section-heading h2{font-size:27px;}
+    }
+    @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.card{transition:none}}
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a class="logo" href="/home.html">EventHub</a>
+      <nav class="nav-links" aria-label="Main navigation">
+        <a href="/home.html">Home</a>
+        <a class="active" aria-current="page" href="/events.html">All Events</a>
+      </nav>
+      <div class="right-links"><a id="role-link" hidden></a></div>
+    </div>
+  </header>
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow">Discover EventHub</div>
+      <h1>Explore All Events</h1>
+      <p>Discover upcoming workshops, events and experiences in one place.</p>
+    </div>
+  </section>
+  <main>
+    <section aria-labelledby="upcoming-heading">
+      <div class="section-heading">
+        <div><h2 id="upcoming-heading">Upcoming Events</h2><p class="count" id="upcoming-count"></p></div>
+        <a class="return" href="/home.html">← Back to Home</a>
+      </div>
+      <div id="loading" class="notice" role="status">Loading events...</div>
+      <div id="upcoming-grid" class="grid" aria-live="polite"></div>
+    </section>
+    <section id="past-section" class="past-section" aria-labelledby="past-heading" hidden>
+      <div class="section-heading"><div><h2 id="past-heading">Past Events</h2><p class="count">Previously published events</p></div></div>
+      <div id="past-grid" class="grid"></div>
+    </section>
+  </main>
+  <footer>EventHub &middot; Event Management System</footer>
+  <script>
+    (() => {
+      const loading = document.getElementById('loading');
+      const upcomingGrid = document.getElementById('upcoming-grid');
+      const pastGrid = document.getElementById('past-grid');
+      const count = document.getElementById('upcoming-count');
+      const pastSection = document.getElementById('past-section');
+
+      function eventMoment(event) {
+        const date = String(event.event_date || '').slice(0, 10);
+        const time = String(event.event_time || '00:00').slice(0, 5);
+        const result = new Date(date + 'T' + time + ':00');
+        return Number.isNaN(result.getTime()) ? null : result;
+      }
+
+      function card(event) {
+        const article = document.createElement('article');
+        article.className = 'card';
+        const body = document.createElement('div');
+        body.className = 'card-body';
+        const imagePath = String(event.image_path || '');
+        if (imagePath.startsWith('/uploads/events/')) {
+          const cover = document.createElement('div');
+          cover.className = 'cover';
+          const image = document.createElement('img');
+          image.src = imagePath;
+          image.alt = String(event.title || 'Event image');
+          image.loading = 'lazy';
+          cover.appendChild(image);
+          article.appendChild(cover);
+        } else {
+          article.classList.add('no-image');
+          const calendar = document.createElement('span');
+          calendar.className = 'cover-icon-small';
+          calendar.textContent = '🗓️';
+          calendar.setAttribute('aria-hidden','true');
+          body.appendChild(calendar);
+        }
+        const category = document.createElement('span');
+        category.className = 'tag';
+        category.textContent = String(event.category || 'Event');
+        const title = document.createElement('h3');
+        title.textContent = String(event.title || 'Untitled Event');
+        const when = document.createElement('p');
+        when.className = 'meta';
+        const moment = eventMoment(event);
+        when.textContent = '📅 ' + (moment ? moment.toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}) + ' · ' + String(event.event_time || '').slice(0,5) : String(event.event_date || 'Date TBA'));
+        const where = document.createElement('p');
+        where.className = 'meta';
+        where.textContent = '📍 ' + String(event.location || 'Location TBA');
+        const foot = document.createElement('div');
+        foot.className = 'foot';
+        const price = document.createElement('span');
+        price.className = 'price';
+        const amount = Number(event.ticket_price || 0);
+        price.textContent = amount > 0 ? 'LKR ' + amount.toLocaleString('en-LK', {minimumFractionDigits:2,maximumFractionDigits:2}) : 'FREE EVENT';
+        const link = document.createElement('a');
+        link.className = 'btn';
+        link.textContent = 'View Details →';
+        link.href = '/event-details.html?id=' + encodeURIComponent(event.event_id);
+        foot.append(price, link);
+        body.append(category, title, when, where, foot);
+        article.appendChild(body);
+        return article;
+      }
+
+      async function setRoleNavigation() {
+        const link = document.getElementById('role-link');
+        if (!link) return;
+        try {
+          const response = await fetch('/api/auth/status', {credentials:'same-origin',cache:'no-store'});
+          if (!response.ok) return;
+          const auth = await response.json();
+          if (!auth.logged_in) {
+            link.href = '/login.html';
+            link.textContent = 'Login';
+          } else if (auth.role === 'organizer') {
+            link.href = '/organizer/manage-events.html';
+            link.textContent = 'Manage Events';
+          } else if (auth.role === 'admin') {
+            link.href = '/admin/dashboard.html';
+            link.textContent = 'Admin Dashboard';
+          } else if (auth.role === 'user') {
+            link.href = '/my-bookings.html';
+            link.textContent = 'My Bookings';
+          } else {
+            return;
+          }
+          link.hidden = false;
+        } catch (_) {
+          // Hide role-only navigation if login status cannot be verified.
+        }
+      }
+
+      async function load() {
+        try {
+          const response = await fetch('/api/events', {credentials:'same-origin',cache:'no-store'});
+          if (!response.ok) throw new Error('Events could not be loaded.');
+          const result = await response.json();
+          if (!result.success || !Array.isArray(result.events)) throw new Error('Invalid event data.');
+          loading.hidden = true;
+          const now = Date.now();
+          const upcoming = [], past = [];
+          for (const event of result.events) {
+            const moment = eventMoment(event);
+            (moment && moment.getTime() < now ? past : upcoming).push(event);
+          }
+          count.textContent = upcoming.length + ' upcoming event' + (upcoming.length === 1 ? '' : 's');
+          if (!upcoming.length) {
+            const empty = document.createElement('div');
+            empty.className='notice';
+            empty.textContent='No upcoming events are available right now.';
+            upcomingGrid.replaceWith(empty);
+          } else {
+            upcomingGrid.replaceChildren(...upcoming.map(card));
+          }
+          if (past.length) {
+            pastSection.hidden=false;
+            pastGrid.replaceChildren(...past.map(card));
+          }
+        } catch (error) {
+          loading.textContent = 'Unable to load events. Please make sure EventHub and MySQL are running, then refresh this page.';
+        }
+      }
+      setRoleNavigation();
+      load();
+    })();
+  </script>
+</body>
+</html>

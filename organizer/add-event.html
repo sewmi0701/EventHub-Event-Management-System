@@ -1,0 +1,229 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>EventHub - Add Event</title>
+    <link rel="stylesheet" href="/organizer/admin.css">
+</head>
+<body>
+
+<div class="dashboard-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <h2 class="logo">EventHub</h2>
+        <p class="role-label">ORGANIZER PANEL</p>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html">◫ Dashboard</a>
+            <a href="add-event.html" class="active">＋ Add Event</a>
+            <a href="manage-events.html">▤ Manage Events</a>
+            <a href="manage-users.html">♙ Manage Users</a>
+            <a href="../home.html">⌂ View Website</a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <a href="../login.html">↪ Logout</a>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+        <header class="topbar">
+            <div>
+                <h1>Add New Event</h1>
+                <p>Create and publish a new event on EventHub.</p>
+            </div>
+
+            <div class="admin-profile">
+                <span class="avatar">A</span>
+                <span>Event Organizer</span>
+            </div>
+        </header>
+
+        <!-- ADD EVENT FORM -->
+        <section class="content-card">
+
+            <div class="card-heading">
+                <div>
+                    <h2>Event Information</h2>
+                    <p>Fill in the details below.</p>
+                </div>
+            </div>
+
+            <form id="addEventForm" class="event-form">
+
+                <div class="form-group">
+                    <label for="eventName">Event Name *</label>
+                    <input type="text" id="eventName"
+                           name="eventName"
+                           placeholder="Enter event name"
+                           maxlength="150" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="eventCategory">Category *</label>
+                    
+<select id="eventCategory" name="category" required
+    onchange="
+        const box = document.getElementById('otherCategory');
+        box.style.display = this.value === 'Other' ? 'block' : 'none';
+        box.required = this.value === 'Other';
+    ">
+
+                        <option value="">Select Category</option>
+                        <option value="Music">Music</option>
+                        <option value="Technology">Technology</option>
+                        <option value="Education">Education</option>
+                        <option value="Sports">Sports</option>
+                        <option value="Workshop">Workshop</option>
+                        <option value="Other">Other</option>
+                    </select>
+
+
+<input
+    type="text"
+    id="otherCategory"
+    placeholder="Enter your event category"
+    maxlength="50"
+    style="display:none; width:100%; margin-top:12px; padding:15px; border:1px solid #d5dded; border-radius:9px;"
+>
+
+
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="eventDate">Event Date *</label>
+                        <input type="date" id="eventDate"
+                               name="date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="eventTime">Event Time *</label>
+                        <input type="time" id="eventTime"
+                               name="time" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="eventLocation">Event Location *</label>
+                    <input type="text" id="eventLocation"
+                           name="location"
+                           placeholder="Enter event location"
+                           required>
+                </div>
+
+                <div class="form-group">
+                    <label for="eventDescription">Description *</label>
+                    <textarea id="eventDescription"
+                              name="description"
+                              rows="5"
+                              placeholder="Describe your event..."
+                              required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="maxParticipants">
+                        Maximum Participants *
+                    </label>
+                    <input type="number" id="maxParticipants"
+                           name="maxParticipants"
+                           min="1" max="100000"
+                           placeholder="Enter participant limit"
+                           required>
+                </div>
+                                <div class="form-group">
+                    <label for="eventImage">Event Image</label>
+                    <input type="file" id="eventImage"
+                           name="eventImage"
+                           accept="image/png,image/jpeg,image/webp">
+                    <small>Supported: JPG, PNG, WEBP (Max 10 MB)</small>
+                </div>
+
+
+                <!-- EVENT TICKET TYPE -->
+<div style="margin:24px 0;padding:22px;
+background:#f8f7ff;border:1px solid #e4e0ff;
+border-radius:14px;">
+
+    <h3 style="margin-top:0;">
+        🎟️ Ticket Information
+    </h3>
+
+    <label for="ticketType">
+        Event Type *
+    </label>
+
+    <select id="ticketType" name="ticketType"
+        required
+        style="width:100%;padding:13px;
+        margin-top:9px;border:1px solid #d9d6ec;
+        border-radius:9px;">
+
+        <option value="free">
+            Free Event
+        </option>
+
+        <option value="paid">
+            Paid Event
+        </option>
+
+    </select>
+
+    <div id="ticketPriceGroup"
+         style="display:none;margin-top:18px;">
+
+        <label for="ticketPrice">
+            Ticket Price (LKR) *
+        </label>
+
+        <input
+            type="number"
+            id="ticketPrice"
+            name="ticketPrice"
+            placeholder="Example: 1500.00"
+            min="0.01"
+            max="999999.99"
+            step="0.01"
+            style="width:100%;padding:13px;
+            margin-top:9px;border:1px solid #d9d6ec;
+            border-radius:9px;"
+        >
+
+        <small>
+            Enter ticket price in Sri Lankan Rupees.
+        </small>
+
+    </div>
+
+</div>
+
+                <div class="form-actions">
+                    <button type="reset" class="cancel-btn">
+                        Clear Form
+                    </button>
+
+                    <button type="submit" class="primary-btn form-submit">
+                        Publish Event
+                    </button>
+                </div>
+                
+
+
+
+                <p id="formMessage" role="status" aria-live="polite"></p>
+
+            </form>
+        </section>
+
+    </main>
+</div>
+
+<script src="/organizer/add-event.js"></script>
+</body>
+</html>
