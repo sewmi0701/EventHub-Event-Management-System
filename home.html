@@ -1,0 +1,250 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventHub - Home</title>
+    <link rel="stylesheet" href="home.css">
+</head>
+<body>
+
+    <!-- NAVIGATION BAR -->
+    <header class="navbar">
+        <a href="home.html" class="logo">EventHub</a>
+
+        <nav class="nav-links">
+            <a href="home.html" class="active">Home</a>
+            <a href="#events">Events</a>
+            <a href="my-bookings.html">My Bookings</a>
+            <a href="/notifications.html">🔔 Notifications</a>
+        </nav>
+
+        <a href="login.html" class="login-btn">Login</a>
+
+<a href="/my-bookings.html">My Bookings</a>
+
+
+<button type="button" id="logoutBtn">Logout</button>
+
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="hero">
+        <div class="hero-content">
+            <span class="hero-tag">WELCOME TO EVENTHUB</span>
+
+            <h1>
+                Discover Amazing Events
+                <span>Near You</span>
+            </h1>
+
+            <p>
+                Explore exciting events, discover new experiences,
+                and create unforgettable memories with EventHub.
+            </p>
+
+            <form id="searchForm" class="search-box">
+                <input
+                    type="search"
+                    id="searchInput"
+                    placeholder="Search for events..."
+                    aria-label="Search for events"
+                >
+                <button type="submit">Search Events</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- UPCOMING EVENTS -->
+    <section class="events-section" id="upcoming-events">
+
+        <div class="section-heading">
+            <div>
+                <span class="section-tag">DISCOVER EVENTS</span>
+                <div id="events"></div>
+                <h2>Upcoming Events</h2>
+                <p>Find and explore upcoming events.</p>
+            </div>
+
+            <a href="events.html" class="view-all">
+                View All Events →
+            </a>
+        </div>
+
+        <!-- Events will be loaded from database later -->
+        <div id="eventsContainer" class="events-grid"></div>
+
+        <!-- EMPTY STATE -->
+        <div id="emptyState" class="empty-state">
+            <div class="empty-icon">📅</div>
+            <h3>No Events Available Yet</h3>
+            <p>
+                New events will appear here once
+                they are published.
+            </p>
+        </div>
+
+    </section>
+
+    <!-- ABOUT SECTION -->
+    <section class="about-section">
+        <span class="section-tag">ABOUT EVENTHUB</span>
+
+        <h2>Making Event Management Easier</h2>
+
+        <p>
+            EventHub is a platform that connects event organizers
+            and participants. Discover events, manage bookings,
+            and enjoy great experiences in one place.
+        </p>
+
+        <div class="features-grid">
+
+            <div class="feature-card">
+                <div class="feature-icon">🔎</div>
+                <h3>Discover Events</h3>
+                <p>Find events that match your interests.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🎟️</div>
+                <h3>Easy Booking</h3>
+                <p>Book your favorite events in a few steps.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📋</div>
+                <h3>Manage Bookings</h3>
+                <p>Keep track of your registered events.</p>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <h2>EventHub</h2>
+        <p>Discover Events. Create Memories.</p>
+
+        <div class="footer-links">
+            <a href="home.html">Home</a>
+            <a href="#events">Events</a>
+            <a href="login.html">Login</a>
+        </div>
+
+        <p class="copyright">
+            &copy; 2026 EventHub. All Rights Reserved.
+        </p>
+    </footer>
+
+    <script src="home.js"></script>
+
+<script>
+// EVENTHUB - FREE / PAID BADGES
+
+(function () {
+    const processed = new WeakSet();
+
+    async function showEventPrices() {
+        const links = document.querySelectorAll(
+            'a[href*="event-details.html?id="]'
+        );
+
+        for (const link of links) {
+            if (processed.has(link)) continue;
+            processed.add(link);
+
+            const url = new URL(link.href);
+            const eventId = url.searchParams.get("id");
+
+            if (!eventId || !/^\d+$/.test(eventId)) {
+                continue;
+            }
+
+            try {
+                const response = await fetch(
+                    `/api/demo-payment/event/${eventId}`
+                );
+
+                if (!response.ok) continue;
+
+                const data = await response.json();
+
+                if (!data.success) continue;
+
+                const badge = document.createElement("span");
+
+                badge.textContent =
+                    data.price > 0
+                        ? `PAID • LKR ${Number(data.price).toLocaleString("en-LK", {
+                            minimumFractionDigits: 2
+                        })}`
+                        : "FREE EVENT";
+
+                badge.style.cssText = `
+                    display:inline-block;
+                    padding:8px 14px;
+                    margin:10px 0;
+                    border-radius:8px;
+                    font-size:13px;
+                    font-weight:bold;
+                    background:${data.price > 0 ? "#eee9ff" : "#e6f7ed"};
+                    color:${data.price > 0 ? "#5036e8" : "#158044"};
+                `;
+
+                const card = link.closest(
+                    ".event-card, article"
+                );
+
+                (card || link).appendChild(badge);
+
+            } catch (error) {
+                console.error("Ticket pricing:", error);
+            }
+        }
+    }
+
+    const observer = new MutationObserver(showEventPrices);
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    showEventPrices();
+})();
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", async function () {
+    try {
+        const response = await fetch("/api/auth/status");
+        const user = await response.json();
+
+        // Show Manage Events only for organizers
+        if (!user.logged_in || user.role !== "organizer") {
+            return;
+        }
+
+        document.querySelectorAll("nav a, header a").forEach(link => {
+            if (link.textContent.trim() === "Events") {
+                const manageLink = document.createElement("a");
+
+                manageLink.href = "/organizer/manage-events.html";
+                manageLink.textContent = "Manage Events";
+                manageLink.className = link.className;
+
+                link.insertAdjacentElement("afterend", manageLink);
+            }
+        });
+
+    } catch (error) {
+        console.error("Navigation error:", error);
+    }
+});
+</script>
+
+</body>
+</html>
