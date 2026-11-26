@@ -1,0 +1,27 @@
+
+# Python virtual environment
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Private database configuration
+db.py
+.env
+.env.*
+
+# Backup and test files
+app_backup.py
+db_test.py
+*backup*
+
+# Temporary fix files
+Fix_*.py
+Fix_*.bat
+
+# Logs and uploaded images
+*.log
+uploads/events/
+
+# Local editor settings
+.vscode/
